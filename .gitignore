@@ -1,0 +1,20 @@
+# Data - download from Kaggle, never commit
+data/*.csv
+data/*.zip
+data/raw/
+
+# Model artefacts and figures
+outputs/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Notebooks and editors
+.ipynb_checkpoints/
+.DS_Store
+.vscode/
+.idea/
