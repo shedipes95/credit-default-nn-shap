@@ -97,6 +97,15 @@ Confusion matrix on 18,451 test applicants (1,490 of them actual defaults):
 | **Actual non-default** | 11,530 | 5,431 |
 | **Actual default** | 403 | 1,087 |
 
+![Confusion matrix](figures/confusion_matrix.png)
+
+![ROC curve](figures/roc_curve.png)
+
+![Precision-recall curve](figures/precision_recall_curve.png)
+
+![Distribution of predicted default probabilities](figures/predicted_probability_distribution.png)
+
+
 So: the model catches 1,087 of 1,490 real defaults (73% recall), and to do it,
 flags 5,431 applicants who would have repaid. Only one in six flagged applicants
 actually defaults. ROC-AUC of 0.774 says the ranking is genuinely informative;
@@ -137,6 +146,14 @@ rows from test, `nsamples=100`, `l1_reg="num_features(20)"`, seed 42.
 | `BUREAU_CONSUMER_AMT_CREDIT_SUM_DEBT_MEAN` | 0.00378 |
 | `PREV_LAST12M_DAYS_DECISION_MEAN` | 0.00370 |
 
+![Top 20 global SHAP feature importance](figures/shap_global_importance.png)
+
+The per-row view behind that ranking — each dot is one explained applicant, so
+you can see which features have a consistent direction and which swing both ways:
+
+![SHAP summary plot](figures/shap_summary.png)
+
+
 Most of that list is what you would expect from a credit model: external credit
 scores at the top, then instalment payment behaviour, debt burden and previous
 application history. `EXT_SOURCE_2`, `EXT_SOURCES_MEAN`, `EXT_SOURCES_MAX`,
@@ -163,10 +180,16 @@ drove it; the largest contribution was
 about ten medium-strength signals, some of them pushing the other way. Move the
 threshold a little and this prediction flips.
 
+![SHAP explanation, true positive](figures/shap_local_true_positive.png)
+
+
 **True negative**, P(default) = 0.0795 — a confident safe call, and a clean one.
 The top contributors all pushed the same direction, led by
 `BUREAU_LAST12M_AMT_CREDIT_SUM_SUM` at −0.051: light recent bureau credit,
 no repayment stress.
+
+![SHAP explanation, true negative](figures/shap_local_true_negative.png)
+
 
 **False positive**, P(default) = 0.8192 — confidently wrong, which is the most
 useful case in the set. `PREV_LAST12M_DAYS_DECISION_MEAN` (+0.113),
@@ -175,6 +198,15 @@ useful case in the set. `PREV_LAST12M_DAYS_DECISION_MEAN` (+0.113),
 `BASEMENTAREA_AVG` at −0.154, the single largest contribution in the case — and
 lost. This applicant repaid. It is a clear illustration of a model overestimating
 risk when several history-based signals line up at once.
+
+![SHAP explanation, false positive](figures/shap_local_false_positive.png)
+
+The second-most-confident false positive is included as well, because it fails a
+different way — no single dominant feature, just a stack of previous-application
+and instalment signals all leaning the same direction:
+
+![SHAP explanation, second false positive](figures/shap_local_false_positive_2.png)
+
 
 **No false negative** appeared in the 40-row sample, so the missed-default case
 could not be examined locally. The full test set has 403 of them.
@@ -201,6 +233,14 @@ could not be examined locally. The full test set has 403 of them.
 - **Nothing was tested for stability across seeds.** One seed, one run per
   configuration. Given the 0.0035 spread across all nine sweep runs, run-to-run
   noise could plausibly account for the ranking.
+
+## Note on the figures
+
+Every plot in this README is the original run's own output, carried over
+unchanged — not regenerated. They therefore match the numbers in the tables
+above, including the 18,451-row test split described in the caveat. Re-running
+`src/evaluate.py` and `src/explain.py` produces the same plots from a fresh run,
+which will differ slightly for the reasons given in Limitations.
 
 ## Note on the code
 
